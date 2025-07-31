@@ -1,13 +1,13 @@
 <div class="app-container">
-  <nav class="navbar">
+  <mat-toolbar color="primary" class="navbar">
     <div class="nav-brand">
       <h1>Movie Watchlist</h1>
     </div>
     <div class="nav-links">
-      <a routerLink="/discover" routerLinkActive="active">Discover</a>
-      <a routerLink="/watchlist" routerLinkActive="active">My Watchlist</a>
+      <a mat-button routerLink="/discover" routerLinkActive="active">Discover</a>
+      <a mat-button routerLink="/watchlist" routerLinkActive="active">My Watchlist</a>
     </div>
-  </nav>
+  </mat-toolbar>
   
   <main class="main-content">
     <router-outlet></router-outlet>
