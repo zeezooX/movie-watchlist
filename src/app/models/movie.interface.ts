@@ -14,5 +14,4 @@ export interface MovieReview {
   movieId: number;
   rating: number;
   reviewText: string;
-  dateCreated: Date;
 }

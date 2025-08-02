@@ -113,9 +113,9 @@ export class MovieService {
     const existingReviewIndex = currentReviews.findIndex(r => r.movieId === review.movieId);
     
     if (existingReviewIndex >= 0) {
-      currentReviews[existingReviewIndex] = { ...review, dateCreated: new Date() };
+      currentReviews[existingReviewIndex] = { ...review };
     } else {
-      currentReviews.push({ ...review, dateCreated: new Date() });
+      currentReviews.push({ ...review });
     }
     
     this.reviewsSubject.next([...currentReviews]);
