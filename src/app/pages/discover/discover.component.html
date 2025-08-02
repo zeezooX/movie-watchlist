@@ -50,6 +50,7 @@
       [movie]="movie"
       [isInWatchlist]="isInWatchlist(movie.id)"
       (addToWatchlist)="onAddToWatchlist($event)"
+      (removeFromWatchlist)="onRemoveFromWatchlist($event)"
     ></app-movie-card>
   </div>
 

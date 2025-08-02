@@ -133,6 +133,13 @@ export class DiscoverComponent implements OnInit, OnDestroy {
     });
   }
 
+  onRemoveFromWatchlist(movie: Movie): void {
+    this.movieService.removeFromWatchlist(movie.id);
+    this.snackBar.open(`${movie.title} removed from watchlist`, 'Close', {
+      duration: 2000,
+    });
+  }
+
   isInWatchlist(movieId: number): boolean {
     return this.movieService.isInWatchlist(movieId);
   }

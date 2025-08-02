@@ -26,6 +26,7 @@ export class MovieCardComponent {
   @Input() movie!: Movie;
   @Input() isInWatchlist = false;
   @Output() addToWatchlist = new EventEmitter<Movie>();
+  @Output() removeFromWatchlist = new EventEmitter<Movie>();
 
   onAddToWatchlist(event: Event): void {
     event.preventDefault();
@@ -33,6 +34,8 @@ export class MovieCardComponent {
 
     if (!this.isInWatchlist) {
       this.addToWatchlist.emit(this.movie);
+    } else {
+      this.removeFromWatchlist.emit(this.movie);
     }
   }
 

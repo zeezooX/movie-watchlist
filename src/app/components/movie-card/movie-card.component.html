@@ -12,13 +12,12 @@
         mat-fab
         color="primary"
         class="watchlist-btn"
-        [disabled]="isInWatchlist"
         (click)="onAddToWatchlist($event)"
         [attr.aria-label]="
-          isInWatchlist ? 'Already in watchlist' : 'Add to watchlist'
+          isInWatchlist ? 'Remove from watchlist' : 'Add to watchlist'
         "
       >
-        <mat-icon>{{ isInWatchlist ? "check" : "add" }}</mat-icon>
+        <mat-icon>{{ isInWatchlist ? "remove" : "add" }}</mat-icon>
       </button>
     </div>
   </div>

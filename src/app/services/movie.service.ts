@@ -187,6 +187,9 @@ export class MovieService {
   }
 
   private loadFromStorage(): void {
+    if (typeof localStorage === 'undefined') {
+      return;
+    }
     try {
       const watchlistData = localStorage.getItem('movieWatchlist');
       if (watchlistData) {
