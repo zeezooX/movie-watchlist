@@ -14,6 +14,15 @@ export class MovieService {
   private readonly baseUrl = environment.watchmodeBaseUrl;
   private readonly apiKey = environment.watchmodeApiKey;
 
+  // Cache configuration
+  private readonly CACHE_DURATION = 5 * 60 * 1000;
+  private readonly MAX_CACHE_SIZE = 100;
+
+  // Cache storage
+  private readonly searchCache = new Map<string, { data: Movie[], timestamp: number }>();
+  private readonly movieDetailsCache = new Map<number, { data: Movie, timestamp: number }>();
+  private latestMoviesCache: { data: Movie[], timestamp: number } | null = null;
+
   private readonly moviesSubject = new BehaviorSubject<Movie[]>([]);
   private readonly watchlistSubject = new BehaviorSubject<Movie[]>([]);
   private readonly reviewsSubject = new BehaviorSubject<MovieReview[]>([]);
@@ -35,6 +44,12 @@ export class MovieService {
       return of([]);
     }
 
+    const cacheKey = query.toLowerCase().trim();
+    const cached = this.getFromSearchCache(cacheKey);
+    if (cached) {
+      return of(cached);
+    }
+
     this.setLoading(true);
     this.clearError();
 
@@ -45,13 +60,22 @@ export class MovieService {
 
     return this.http.get<WatchmodeSearchResponse>(`${this.baseUrl}/autocomplete-search/`, { params })
       .pipe(
-        map(response => response.results.map(result => this.mapSearchResultToMovie(result))),
+        map(response => {
+          const movies = response.results.map(result => this.mapSearchResultToMovie(result));
+          this.setSearchCache(cacheKey, movies);
+          return movies;
+        }),
         tap(() => this.setLoading(false)),
         catchError(error => this.handleError('Failed to search movies', error))
       );
   }
 
   getLatestMovies(): Observable<Movie[]> {
+    if (this.latestMoviesCache && this.isCacheValid(this.latestMoviesCache.timestamp)) {
+      this.moviesSubject.next(this.latestMoviesCache.data);
+      return of(this.latestMoviesCache.data);
+    }
+
     this.setLoading(true);
     this.clearError();
 
@@ -62,6 +86,7 @@ export class MovieService {
       .pipe(
         map(response => {
           const movies = response.releases.map(release => this.mapReleaseToMovie(release));
+          this.latestMoviesCache = { data: movies, timestamp: Date.now() };
           this.moviesSubject.next(movies);
           return movies;
         }),
@@ -71,6 +96,11 @@ export class MovieService {
   }
 
   getMovieDetails(movieId: number): Observable<Movie | null> {
+    const cached = this.getFromMovieDetailsCache(movieId);
+    if (cached) {
+      return of(cached);
+    }
+
     this.setLoading(true);
     this.clearError();
 
@@ -79,7 +109,11 @@ export class MovieService {
 
     return this.http.get<WatchmodeTitleDetails>(`${this.baseUrl}/title/${movieId}/details/`, { params })
       .pipe(
-        map(details => this.mapDetailsToMovie(details)),
+        map(details => {
+          const movie = this.mapDetailsToMovie(details);
+          this.setMovieDetailsCache(movieId, movie);
+          return movie;
+        }),
         tap(() => this.setLoading(false)),
         catchError(error => this.handleError('Failed to fetch movie details', error))
       );
@@ -204,6 +238,61 @@ export class MovieService {
       }
     } catch (error) {
       console.error('Failed to load data from storage:', error);
+    }
+  }
+
+  // Cache management methods
+  private isCacheValid(timestamp: number): boolean {
+    return Date.now() - timestamp < this.CACHE_DURATION;
+  }
+
+  private getFromSearchCache(key: string): Movie[] | null {
+    const cached = this.searchCache.get(key);
+    if (cached && this.isCacheValid(cached.timestamp)) {
+      return cached.data;
+    }
+    if (cached) {
+      this.searchCache.delete(key);
+    }
+    return null;
+  }
+
+  private setSearchCache(key: string, data: Movie[]): void {
+    this.cleanupSearchCache();
+    this.searchCache.set(key, { data, timestamp: Date.now() });
+  }
+
+  private cleanupSearchCache(): void {
+    if (this.searchCache.size >= this.MAX_CACHE_SIZE) {
+      const entries = Array.from(this.searchCache.entries());
+      entries.sort((a, b) => a[1].timestamp - b[1].timestamp);
+      const entriesToRemove = entries.slice(0, Math.floor(this.MAX_CACHE_SIZE / 2));
+      entriesToRemove.forEach(([key]) => this.searchCache.delete(key));
+    }
+  }
+
+  private getFromMovieDetailsCache(movieId: number): Movie | null {
+    const cached = this.movieDetailsCache.get(movieId);
+    if (cached && this.isCacheValid(cached.timestamp)) {
+      return cached.data;
+    }
+    if (cached) {
+      this.movieDetailsCache.delete(movieId);
+    }
+    return null;
+  }
+
+  private setMovieDetailsCache(movieId: number, data: Movie): void {
+    this.cleanupMovieDetailsCache();
+    this.movieDetailsCache.set(movieId, { data, timestamp: Date.now() });
+  }
+
+  private cleanupMovieDetailsCache(): void {
+    if (this.movieDetailsCache.size >= this.MAX_CACHE_SIZE) {
+      const entries = Array.from(this.movieDetailsCache.entries());
+      entries.sort((a, b) => a[1].timestamp - b[1].timestamp);
+      const entriesToRemove = entries.slice(0, Math.floor(this.MAX_CACHE_SIZE / 2));
+      entriesToRemove.forEach(([key]) => this.movieDetailsCache.delete(key));
     }
   }
 }
