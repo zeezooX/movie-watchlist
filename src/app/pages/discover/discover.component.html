@@ -1,3 +1,79 @@
 <div class="discover-container">
-  <h1>Discover Movies</h1>
+  <div class="discover-header">
+    <h1>Discover Movies</h1>
+
+    <div class="search-container">
+      <mat-form-field appearance="outline" class="search-field">
+        <mat-label>Search movies...</mat-label>
+        <input
+          matInput
+          [(ngModel)]="searchQuery"
+          (input)="onSearchInput(searchQuery)"
+          placeholder="Enter movie title"
+        />
+        <mat-icon matSuffix>search</mat-icon>
+        <button
+          *ngIf="searchQuery"
+          matSuffix
+          mat-icon-button
+          (click)="clearSearch()"
+          aria-label="Clear search"
+        >
+          <mat-icon>close</mat-icon>
+        </button>
+      </mat-form-field>
+    </div>
+  </div>
+
+  <div *ngIf="isLoading || isSearching" class="loading-container">
+    <mat-spinner diameter="50"></mat-spinner>
+    <p>{{ isSearching ? "Searching..." : "Loading movies..." }}</p>
+  </div>
+
+  <div *ngIf="searchQuery && !isSearching" class="search-info">
+    <p>
+      {{
+        searchResults.length > 0
+          ? "Found " +
+            searchResults.length +
+            ' results for "' +
+            searchQuery +
+            '"'
+          : 'No results found for "' + searchQuery + '"'
+      }}
+    </p>
+  </div>
+
+  <div *ngIf="!isLoading && !isSearching" class="movies-grid">
+    <app-movie-card
+      *ngFor="let movie of getDisplayedMovies(); trackBy: trackByMovieId"
+      [movie]="movie"
+      [isInWatchlist]="isInWatchlist(movie.id)"
+      (addToWatchlist)="onAddToWatchlist($event)"
+    ></app-movie-card>
+  </div>
+
+  <div
+    *ngIf="!isLoading && !isSearching && getDisplayedMovies().length === 0"
+    class="empty-state"
+  >
+    <mat-icon class="empty-icon">movie</mat-icon>
+    <h3>{{ searchQuery ? "No movies found" : "No movies available" }}</h3>
+    <p>
+      {{
+        searchQuery
+          ? "Try a different search term"
+          : "Check back later for new releases"
+      }}
+    </p>
+  </div>
+
+  <div *ngIf="error && !isLoading" class="error-state">
+    <mat-icon class="error-icon">error</mat-icon>
+    <h3>Something went wrong</h3>
+    <p>{{ error }}</p>
+    <button mat-raised-button color="primary" (click)="loadLatestMovies()">
+      Try Again
+    </button>
+  </div>
 </div>
