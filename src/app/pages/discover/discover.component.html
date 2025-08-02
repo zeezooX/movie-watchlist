@@ -1,10 +1,10 @@
 <div class="discover-container">
   <div class="discover-header">
-    <h1>Discover Movies</h1>
+    <h1>{{ getPageTitle() }}</h1>
 
     <div class="search-container">
       <mat-form-field appearance="outline" class="search-field">
-        <mat-label>Search movies...</mat-label>
+        <mat-label>{{ isWatchlistPage ? 'Search your watchlist...' : 'Search movies...' }}</mat-label>
         <input
           matInput
           [(ngModel)]="searchQuery"
@@ -25,13 +25,13 @@
     </div>
   </div>
 
-  <div *ngIf="isLoading || isSearching" class="loading-container">
+  <div *ngIf="isLoading || (isSearching && !isWatchlistPage)" class="loading-container">
     <mat-spinner diameter="50"></mat-spinner>
     <p>{{ isSearching ? "Searching..." : "Loading movies..." }}</p>
   </div>
 
   <div *ngIf="searchQuery && !isSearching" class="search-info">
-    <p>
+    <p *ngIf="!isWatchlistPage">
       {{
         searchResults.length > 0
           ? "Found " +
@@ -42,9 +42,20 @@
           : 'No results found for "' + searchQuery + '"'
       }}
     </p>
+    <p *ngIf="isWatchlistPage">
+      {{
+        getDisplayedMovies().length > 0
+          ? "Found " +
+            getDisplayedMovies().length +
+            ' movies in your watchlist for "' +
+            searchQuery +
+            '"'
+          : 'No movies in your watchlist match "' + searchQuery + '"'
+      }}
+    </p>
   </div>
 
-  <div *ngIf="!isLoading && !isSearching" class="movies-grid">
+  <div *ngIf="!isLoading && !(isSearching && !isWatchlistPage)" class="movies-grid">
     <app-movie-card
       *ngFor="let movie of getDisplayedMovies(); trackBy: trackByMovieId"
       [movie]="movie"
@@ -55,16 +66,16 @@
   </div>
 
   <div
-    *ngIf="!isLoading && !isSearching && getDisplayedMovies().length === 0"
+    *ngIf="!isLoading && !(isSearching && !isWatchlistPage) && getDisplayedMovies().length === 0"
     class="empty-state"
   >
-    <mat-icon class="empty-icon">movie</mat-icon>
-    <h3>{{ searchQuery ? "No movies found" : "No movies available" }}</h3>
+    <mat-icon class="empty-icon">{{ isWatchlistPage ? "bookmark_border" : "movie" }}</mat-icon>
+    <h3>{{ searchQuery ? "No movies found" : (isWatchlistPage ? "Your watchlist is empty" : "No movies available") }}</h3>
     <p>
       {{
         searchQuery
           ? "Try a different search term"
-          : "Check back later for new releases"
+          : (isWatchlistPage ? "Start adding movies to your watchlist from the discover page" : "Check back later for new releases")
       }}
     </p>
   </div>

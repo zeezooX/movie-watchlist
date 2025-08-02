@@ -1,6 +1,5 @@
 import { Routes } from '@angular/router';
 import { DiscoverComponent } from './pages/discover/discover.component';
-import { WatchlistComponent } from './pages/watchlist/watchlist.component';
 import { MovieReviewComponent } from './pages/movie-review/movie-review.component';
 
 export const routes: Routes = [
@@ -11,7 +10,7 @@ export const routes: Routes = [
   },
   { 
     path: 'watchlist', 
-    component: WatchlistComponent
+    component: DiscoverComponent
   },
   { 
     path: 'movie/:id', 

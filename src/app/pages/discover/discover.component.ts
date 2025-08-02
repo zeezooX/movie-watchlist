@@ -1,6 +1,6 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterModule } from '@angular/router';
+import { RouterModule, Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { MatInputModule } from '@angular/material/input';
 import { MatFormFieldModule } from '@angular/material/form-field';
@@ -35,17 +35,20 @@ import { MovieCardComponent } from '../../components/movie-card/movie-card.compo
 export class DiscoverComponent implements OnInit, OnDestroy {
   movies: Movie[] = [];
   searchResults: Movie[] = [];
+  watchlistMovies: Movie[] = [];
   isLoading = false;
   error: string | null = null;
   searchQuery = '';
   isSearching = false;
+  isWatchlistPage = false;
 
   private readonly destroy$ = new Subject<void>();
   private readonly searchSubject = new Subject<string>();
 
   constructor(
     private readonly movieService: MovieService,
-    private readonly snackBar: MatSnackBar
+    private readonly snackBar: MatSnackBar,
+    private readonly router: Router
   ) {
     this.searchSubject
       .pipe(debounceTime(500), distinctUntilChanged(), takeUntil(this.destroy$))
@@ -55,7 +58,15 @@ export class DiscoverComponent implements OnInit, OnDestroy {
   }
 
   ngOnInit(): void {
-    this.loadLatestMovies();
+    // Check if we're on the watchlist page
+    this.isWatchlistPage = this.router.url === '/watchlist';
+    
+    if (this.isWatchlistPage) {
+      this.loadWatchlistMovies();
+    } else {
+      this.loadLatestMovies();
+    }
+    
     this.subscribeToState();
   }
 
@@ -76,6 +87,14 @@ export class DiscoverComponent implements OnInit, OnDestroy {
         });
       },
     });
+  }
+
+  loadWatchlistMovies(): void {
+    this.movieService.watchlist$
+      .pipe(takeUntil(this.destroy$))
+      .subscribe((watchlist) => {
+        this.watchlistMovies = watchlist || [];
+      });
   }
 
   private subscribeToState(): void {
@@ -107,6 +126,13 @@ export class DiscoverComponent implements OnInit, OnDestroy {
       return;
     }
 
+    // On watchlist page, we don't need to call API - just filter locally
+    if (this.isWatchlistPage) {
+      this.isSearching = false;
+      return; // getDisplayedMovies() will handle the filtering
+    }
+
+    // On discover page, search via API
     this.isSearching = true;
     this.movieService.searchMovies(query).subscribe({
       next: (results) => {
@@ -145,7 +171,21 @@ export class DiscoverComponent implements OnInit, OnDestroy {
   }
 
   getDisplayedMovies(): Movie[] {
-    return this.searchQuery.trim() ? this.searchResults : this.movies;
+    if (this.isWatchlistPage) {
+      // On watchlist page, show watchlist movies filtered by search
+      return this.searchQuery.trim() 
+        ? this.watchlistMovies.filter(movie => 
+            movie.title.toLowerCase().includes(this.searchQuery.toLowerCase())
+          )
+        : this.watchlistMovies;
+    } else {
+      // On discover page, show search results or latest movies
+      return this.searchQuery.trim() ? this.searchResults : this.movies;
+    }
+  }
+
+  getPageTitle(): string {
+    return this.isWatchlistPage ? 'Your Watchlist' : 'Discover Movies';
   }
 
   trackByMovieId(index: number, movie: Movie): number {
