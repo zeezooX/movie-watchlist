@@ -10,7 +10,7 @@
     <div class="card-overlay">
       <button
         mat-fab
-        color="primary"
+        [color]="isInWatchlist ? 'accent' : 'primary'"
         class="watchlist-btn"
         (click)="onAddToWatchlist($event)"
         [attr.aria-label]="

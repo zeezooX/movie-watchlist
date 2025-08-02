@@ -169,7 +169,7 @@ export class MovieReviewComponent implements OnInit, OnDestroy {
   }
 
   goBack(): void {
-    this.router.navigate(['/discover']);
+    window.history.back();
   }
 
   getFormattedRuntime(): string {
