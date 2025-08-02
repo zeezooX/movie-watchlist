@@ -40,7 +40,8 @@ export class MovieService {
 
     const params = new HttpParams()
       .set('apiKey', this.apiKey)
-      .set('search_value', query);
+      .set('search_value', query)
+      .set('search_type', 2);
 
     return this.http.get<WatchmodeSearchResponse>(`${this.baseUrl}/autocomplete-search/`, { params })
       .pipe(
